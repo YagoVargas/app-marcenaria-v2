@@ -1,66 +1,70 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Plus, Calendar, Phone, MapPin, Edit, Trash2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 
 interface Client {
   id: string
-  nome: string
-  telefone: string
-  endereco: string
-  tipo_ambiente: string
-  data_visita: string
-  observacoes: string
+  name: string
+  phone: string
+  address: string
+  environment_type: string
+  visit_date: string
+  reschedule_date?: string
+  notes?: string
 }
 
 export default function SchedulePage() {
   const router = useRouter()
   const [clients, setClients] = useState<Client[]>([])
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  
-  // Form states
-  const [nome, setNome] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [endereco, setEndereco] = useState('')
-  const [tipoAmbiente, setTipoAmbiente] = useState('')
-  const [dataVisita, setDataVisita] = useState('')
-  const [observacoes, setObservacoes] = useState('')
+  const [loading, setLoading] = useState(true)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  useEffect(() => {
+    loadClients()
+  }, [])
 
-    // TODO: Salvar no Supabase
-    const newClient: Client = {
-      id: Date.now().toString(),
-      nome,
-      telefone,
-      endereco,
-      tipo_ambiente: tipoAmbiente,
-      data_visita: dataVisita,
-      observacoes
+  const loadClients = async () => {
+    try {
+      // TODO: Filtrar por user_id quando tiver autenticação
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('visit_date', { ascending: true })
+
+      if (error) throw error
+
+      setClients(data || [])
+    } catch (error: any) {
+      console.error('Erro ao carregar clientes:', error)
+      toast.error('Erro ao carregar clientes')
+    } finally {
+      setLoading(false)
     }
-
-    setClients([...clients, newClient])
-    
-    // Limpar form
-    setNome('')
-    setTelefone('')
-    setEndereco('')
-    setTipoAmbiente('')
-    setDataVisita('')
-    setObservacoes('')
-    setIsDialogOpen(false)
   }
 
-  const handleDelete = (id: string) => {
-    setClients(clients.filter(c => c.id !== id))
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este cliente?')) return
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      toast.success('Cliente excluído com sucesso')
+      loadClients()
+    } catch (error: any) {
+      console.error('Erro ao excluir cliente:', error)
+      toast.error('Erro ao excluir cliente')
+    }
   }
 
   return (
@@ -83,113 +87,26 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Cliente
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Cadastrar Cliente</DialogTitle>
-                <DialogDescription>
-                  Preencha os dados do cliente e agende a visita
-                </DialogDescription>
-              </DialogHeader>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nome">Nome do Cliente *</Label>
-                  <Input
-                    id="nome"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    required
-                    placeholder="Nome completo"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone *</Label>
-                    <Input
-                      id="telefone"
-                      value={telefone}
-                      onChange={(e) => setTelefone(e.target.value)}
-                      required
-                      placeholder="(00) 00000-0000"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tipo">Tipo de Ambiente</Label>
-                    <Input
-                      id="tipo"
-                      value={tipoAmbiente}
-                      onChange={(e) => setTipoAmbiente(e.target.value)}
-                      placeholder="Ex: Cozinha, Closet..."
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endereco">Endereço *</Label>
-                  <Input
-                    id="endereco"
-                    value={endereco}
-                    onChange={(e) => setEndereco(e.target.value)}
-                    required
-                    placeholder="Rua, número, bairro, cidade"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="data">Data da Visita *</Label>
-                  <Input
-                    id="data"
-                    type="datetime-local"
-                    value={dataVisita}
-                    onChange={(e) => setDataVisita(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="obs">Observações</Label>
-                  <Textarea
-                    id="obs"
-                    value={observacoes}
-                    onChange={(e) => setObservacoes(e.target.value)}
-                    placeholder="Anotações rápidas sobre o cliente ou projeto"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white"
-                  >
-                    Salvar Cliente
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button
+            onClick={() => router.push('/clients/new')}
+            className="bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Cliente
+          </Button>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {clients.length === 0 ? (
+        {loading ? (
+          <Card className="border-amber-200">
+            <CardContent className="py-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+              <p className="text-amber-700">Carregando clientes...</p>
+            </CardContent>
+          </Card>
+        ) : clients.length === 0 ? (
           <Card className="border-amber-200">
             <CardContent className="py-12 text-center">
               <Calendar className="w-16 h-16 text-amber-300 mx-auto mb-4" />
@@ -200,7 +117,7 @@ export default function SchedulePage() {
                 Comece adicionando seu primeiro cliente
               </p>
               <Button
-                onClick={() => setIsDialogOpen(true)}
+                onClick={() => router.push('/clients/new')}
                 className="bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -213,40 +130,61 @@ export default function SchedulePage() {
             {clients.map((client) => (
               <Card key={client.id} className="border-amber-200 hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <CardTitle className="text-amber-900">{client.nome}</CardTitle>
-                  {client.tipo_ambiente && (
-                    <CardDescription className="text-amber-600">
-                      {client.tipo_ambiente}
+                  <CardTitle className="text-amber-900">{client.name}</CardTitle>
+                  {client.environment_type && (
+                    <CardDescription className="text-amber-600 capitalize">
+                      {client.environment_type}
                     </CardDescription>
                   )}
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2 text-sm text-amber-700">
                     <Phone className="w-4 h-4" />
-                    <span>{client.telefone}</span>
+                    <span>{client.phone}</span>
                   </div>
 
-                  <div className="flex items-start gap-2 text-sm text-amber-700">
-                    <MapPin className="w-4 h-4 mt-0.5" />
-                    <span>{client.endereco}</span>
+                  {client.address && (
+                    <div className="flex items-start gap-2 text-sm text-amber-700">
+                      <MapPin className="w-4 h-4 mt-0.5" />
+                      <span>{client.address}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="w-4 h-4 text-amber-700" />
+                    <div>
+                      <Badge variant="outline" className="border-amber-400 text-amber-700">
+                        {new Date(client.visit_date).toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Badge>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-amber-700">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      {new Date(client.data_visita).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
+                  {client.reschedule_date && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-blue-700" />
+                      <div>
+                        <Badge variant="outline" className="border-blue-400 text-blue-700">
+                          Reagendado: {new Date(client.reschedule_date).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
 
-                  {client.observacoes && (
+                  {client.notes && (
                     <p className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
-                      {client.observacoes}
+                      {client.notes}
                     </p>
                   )}
 
@@ -255,6 +193,7 @@ export default function SchedulePage() {
                       variant="outline"
                       size="sm"
                       className="flex-1 border-amber-300 text-amber-700 hover:bg-amber-50"
+                      onClick={() => router.push(`/clients/${client.id}/edit`)}
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Editar

@@ -1,4 +1,4 @@
-export function Logo({ className = "h-12 w-12" }: { className?: string }) {
+export default function Logo({ className = "h-12 w-12" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="256" cy="256" r="240" fill="#8B4513"/>
