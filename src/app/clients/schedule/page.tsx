@@ -14,7 +14,7 @@ interface Client {
   name: string
   phone: string
   address: string
-  environment_type: string
+  ambientes: string[]
   visit_date: string
   reschedule_date?: string
   notes?: string
@@ -31,7 +31,6 @@ export default function SchedulePage() {
 
   const loadClients = async () => {
     try {
-      // TODO: Filtrar por user_id quando tiver autenticação
       const { data, error } = await supabase
         .from('clients')
         .select('*')
@@ -131,9 +130,15 @@ export default function SchedulePage() {
               <Card key={client.id} className="border-amber-200 hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <CardTitle className="text-amber-900">{client.name}</CardTitle>
-                  {client.environment_type && (
-                    <CardDescription className="text-amber-600 capitalize">
-                      {client.environment_type}
+                  {client.ambientes && client.ambientes.length > 0 && (
+                    <CardDescription className="text-amber-600">
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {client.ambientes.map((ambiente, idx) => (
+                          <Badge key={idx} variant="outline" className="border-amber-400 text-amber-700 text-xs">
+                            {ambiente}
+                          </Badge>
+                        ))}
+                      </div>
                     </CardDescription>
                   )}
                 </CardHeader>
@@ -157,9 +162,7 @@ export default function SchedulePage() {
                         {new Date(client.visit_date).toLocaleString('pt-BR', {
                           day: '2-digit',
                           month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                          year: 'numeric'
                         })}
                       </Badge>
                     </div>
@@ -173,9 +176,7 @@ export default function SchedulePage() {
                           Reagendado: {new Date(client.reschedule_date).toLocaleString('pt-BR', {
                             day: '2-digit',
                             month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            year: 'numeric'
                           })}
                         </Badge>
                       </div>

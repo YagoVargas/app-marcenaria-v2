@@ -7,26 +7,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon, ArrowLeft, Save } from 'lucide-react'
+import { CalendarIcon, ArrowLeft, Save, Plus, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+
+const AMBIENTES_OPCOES = [
+  'Cozinha',
+  'Banheiro',
+  'Quarto',
+  'Sala',
+  'Escritório',
+  'Lavanderia',
+  'Closet',
+  'Área Gourmet',
+  'Outro'
+]
 
 export default function NewClientPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [visitDate, setVisitDate] = useState<Date>()
   const [rescheduleDate, setRescheduleDate] = useState<Date>()
+  const [selectedAmbientes, setSelectedAmbientes] = useState<string[]>([])
   
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     address: '',
-    environment_type: '',
     notes: ''
   })
 
@@ -34,29 +46,34 @@ export default function NewClientPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const toggleAmbiente = (ambiente: string) => {
+    setSelectedAmbientes(prev => 
+      prev.includes(ambiente) 
+        ? prev.filter(a => a !== ambiente)
+        : [...prev, ambiente]
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.name || !formData.phone || !visitDate) {
-      toast.error('Preencha os campos obrigatórios: Nome, Telefone e Data da Visita')
+    if (!formData.name || !formData.phone || !visitDate || selectedAmbientes.length === 0) {
+      toast.error('Preencha os campos obrigatórios: Nome, Telefone, Data da Visita e pelo menos 1 Ambiente')
       return
     }
 
     setLoading(true)
 
     try {
-      // TODO: Pegar user_id real da sessão
-      const userId = '00000000-0000-0000-0000-000000000000' // Temporário
-
+      // NÃO enviar user_id - será gerado via trigger
       const { data, error } = await supabase
         .from('clients')
         .insert([
           {
-            user_id: userId,
             name: formData.name,
             phone: formData.phone,
             address: formData.address || null,
-            environment_type: formData.environment_type || null,
+            ambientes: selectedAmbientes,
             visit_date: visitDate.toISOString(),
             reschedule_date: rescheduleDate?.toISOString() || null,
             notes: formData.notes || null
@@ -152,30 +169,52 @@ export default function NewClientPage() {
                 />
               </div>
 
-              {/* Tipo de Ambiente */}
+              {/* Ambientes (múltipla escolha) */}
               <div className="space-y-2">
-                <Label htmlFor="environment_type" className="text-amber-900">
-                  Tipo de Ambiente
+                <Label className="text-amber-900">
+                  Ambientes <span className="text-red-500">*</span>
                 </Label>
-                <Select
-                  value={formData.environment_type}
-                  onValueChange={(value) => handleInputChange('environment_type', value)}
-                >
-                  <SelectTrigger className="border-amber-200 focus:border-amber-400">
-                    <SelectValue placeholder="Selecione o tipo de ambiente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cozinha">Cozinha</SelectItem>
-                    <SelectItem value="banheiro">Banheiro</SelectItem>
-                    <SelectItem value="quarto">Quarto</SelectItem>
-                    <SelectItem value="sala">Sala</SelectItem>
-                    <SelectItem value="escritorio">Escritório</SelectItem>
-                    <SelectItem value="lavanderia">Lavanderia</SelectItem>
-                    <SelectItem value="closet">Closet</SelectItem>
-                    <SelectItem value="area_gourmet">Área Gourmet</SelectItem>
-                    <SelectItem value="outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
+                <p className="text-xs text-amber-600">Selecione um ou mais ambientes</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                  {AMBIENTES_OPCOES.map((ambiente) => (
+                    <div
+                      key={ambiente}
+                      className={`flex items-center space-x-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        selectedAmbientes.includes(ambiente)
+                          ? 'border-amber-500 bg-amber-50'
+                          : 'border-amber-200 hover:border-amber-300'
+                      }`}
+                      onClick={() => toggleAmbiente(ambiente)}
+                    >
+                      <Checkbox
+                        checked={selectedAmbientes.includes(ambiente)}
+                        onCheckedChange={() => toggleAmbiente(ambiente)}
+                      />
+                      <label className="text-sm text-amber-900 cursor-pointer flex-1">
+                        {ambiente}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {selectedAmbientes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {selectedAmbientes.map((ambiente) => (
+                      <div
+                        key={ambiente}
+                        className="flex items-center gap-1 bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-sm"
+                      >
+                        {ambiente}
+                        <button
+                          type="button"
+                          onClick={() => toggleAmbiente(ambiente)}
+                          className="ml-1 hover:text-amber-700"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Data da Visita */}
@@ -191,9 +230,9 @@ export default function NewClientPage() {
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {visitDate ? (
-                        format(visitDate, "PPP 'às' HH:mm", { locale: ptBR })
+                        format(visitDate, "PPP", { locale: ptBR })
                       ) : (
-                        <span>Selecione a data e hora</span>
+                        <span>Selecione a data</span>
                       )}
                     </Button>
                   </PopoverTrigger>
@@ -222,7 +261,7 @@ export default function NewClientPage() {
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {rescheduleDate ? (
-                        format(rescheduleDate, "PPP 'às' HH:mm", { locale: ptBR })
+                        format(rescheduleDate, "PPP", { locale: ptBR })
                       ) : (
                         <span>Selecione nova data (se necessário)</span>
                       )}
