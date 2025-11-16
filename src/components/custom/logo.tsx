@@ -1,0 +1,15 @@
+export function Logo({ className = "h-12 w-12" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="256" cy="256" r="240" fill="#8B4513"/>
+      <path d="M256 140 C 280 140, 300 160, 300 184 C 300 208, 280 228, 256 228 C 232 228, 212 208, 212 184 C 212 160, 232 140, 256 140 Z" fill="#E91E63"/>
+      <path d="M 256 220 L 220 280 L 220 340 L 240 340 L 240 380 L 272 380 L 272 340 L 292 340 L 292 280 Z" fill="#E91E63"/>
+      <path d="M 180 320 L 180 420 L 200 420 L 200 340 L 280 340 L 280 320 Z" fill="#D4AF37" stroke="#FFF" strokeWidth="3"/>
+      <path d="M 320 280 L 380 320 L 375 330 L 315 290 Z" fill="#D4AF37"/>
+      <path d="M 380 320 L 385 315 L 390 320 L 385 325 L 380 320 M 370 310 L 375 305 L 380 310 L 375 315 L 370 310 M 360 300 L 365 295 L 370 300 L 365 305 L 360 300" fill="#FFF"/>
+      <line x1="240" y1="160" x2="272" y2="160" stroke="#6B3410" strokeWidth="2" opacity="0.3"/>
+      <line x1="235" y1="170" x2="277" y2="170" stroke="#6B3410" strokeWidth="2" opacity="0.3"/>
+      <circle cx="256" cy="256" r="240" fill="none" stroke="#D4AF37" strokeWidth="8"/>
+    </svg>
+  )
+}
