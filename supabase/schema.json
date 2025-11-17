@@ -1,3 +1,152 @@
 {
-  "models": []
-}
+  "models": [
+    {
+      "name": "profiles",
+      "label": "Perfis",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "user_id", "type": "uuid" },
+        { "name": "nome_profissional", "type": "text", "required": true },
+        { "name": "tratamento", "type": "text", "enum": ["Sr.", "Sra.", "Outro"] },
+        { "name": "nome_marcenaria", "type": "text", "required": true },
+        { "name": "endereco", "type": "text" },
+        { "name": "telefone", "type": "text" },
+        { "name": "materiais_usados", "type": "array" },
+        { "name": "unidade_medida", "type": "text", "enum": ["m", "cm", "mm"], "default": "cm" },
+        { "name": "estilo_trabalho", "type": "text" },
+        { "name": "logo_url", "type": "text" },
+        { "name": "first_access", "type": "boolean", "default": true }
+      ],
+      "relations": {
+        "clients": { "type": "has_many", "foreign_key": "profile_id" },
+        "projects": { "type": "has_many", "foreign_key": "profile_id" }
+      }
+    },
+    {
+      "name": "clients",
+      "label": "Clientes",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "profile_id", "type": "uuid", "relation": "profiles" },
+        { "name": "name", "type": "text", "required": true },
+        { "name": "phone", "type": "text" },
+        { "name": "address", "type": "text" },
+        { "name": "ambientes_old", "type": "text" },
+        { "name": "visit_date", "type": "timestamp" },
+        { "name": "reschedule_date", "type": "timestamp" },
+        { "name": "notes", "type": "text" }
+      ],
+      "relations": {
+        "projects": { "type": "has_many", "foreign_key": "client_id" }
+      }
+    },
+    {
+      "name": "projects",
+      "label": "Projetos",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "profile_id", "type": "uuid", "relation": "profiles" },
+        { "name": "client_id", "type": "uuid", "relation": "clients" },
+        { "name": "nome", "type": "text", "required": true },
+        { "name": "codigo", "type": "text", "required": true },
+        { "name": "status", "type": "text", "enum": ["draft", "briefing", "medindo", "finalizado"], "default": "draft" }
+      ],
+      "relations": {
+        "ambientes": { "type": "has_many", "foreign_key": "project_id" },
+        "fotos": { "type": "has_many", "foreign_key": "project_id" },
+        "observacoes": { "type": "has_many", "foreign_key": "project_id" }
+      }
+    },
+    {
+      "name": "ambientes",
+      "label": "Ambientes",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "project_id", "type": "uuid", "relation": "projects" },
+        { "name": "nome", "type": "text", "required": true },
+        { "name": "ordem", "type": "integer", "default": 0 }
+      ],
+      "relations": {
+        "paredes": { "type": "has_many", "foreign_key": "ambiente_id" },
+        "modulos": { "type": "has_many", "foreign_key": "ambiente_id" }
+      }
+    },
+    {
+      "name": "paredes",
+      "label": "Paredes",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "ambiente_id", "type": "uuid", "relation": "ambientes" },
+        { "name": "nome", "type": "text", "required": true },
+        { "name": "foto_url", "type": "text" },
+        { "name": "altura", "type": "numeric" },
+        { "name": "comprimento", "type": "numeric" },
+        { "name": "ordem", "type": "integer", "default": 0 }
+      ],
+      "relations": {
+        "openings": { "type": "has_many", "foreign_key": "parede_id" },
+        "pontos_eletricos": { "type": "has_many", "foreign_key": "parede_id" },
+        "pontos_hidraulicos": { "type": "has_many", "foreign_key": "parede_id" }
+      }
+    },
+    {
+      "name": "openings",
+      "label": "Aberturas",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "parede_id", "type": "uuid", "relation": "paredes" },
+        { "name": "tipo", "type": "text", "required": true },
+        { "name": "largura", "type": "numeric", "required": true },
+        { "name": "altura", "type": "numeric", "required": true },
+        { "name": "altura_piso", "type": "numeric" },
+        { "name": "moldura_interna", "type": "boolean", "default": false },
+        { "name": "moldura_externa", "type": "boolean", "default": false },
+        { "name": "medida_lateral_esquerda", "type": "numeric" },
+        { "name": "medida_lateral_direita", "type": "numeric" },
+        { "name": "lado_medicao", "type": "text" },
+        { "name": "croqui_url", "type": "text" }
+      ]
+    },
+    {
+      "name": "pontos_eletricos",
+      "label": "Pontos Elétricos",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "parede_id", "type": "uuid", "relation": "paredes" },
+        { "name": "nome", "type": "text", "required": true },
+        { "name": "tipo", "type": "text", "required": true },
+        { "name": "altura", "type": "numeric" },
+        { "name": "distancia_lateral", "type": "numeric" },
+        { "name": "dimensoes", "type": "text" },
+        { "name": "croqui_url", "type": "text" }
+      ]
+    },
+    {
+      "name": "pontos_hidraulicos",
+      "label": "Pontos Hidráulicos",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "parede_id", "type": "uuid", "relation": "paredes" },
+        { "name": "tipo", "type": "text", "required": true },
+        { "name": "diametro_polegadas", "type": "numeric" },
+        { "name": "altura", "type": "numeric" },
+        { "name": "distancia_lateral", "type": "numeric" },
+        { "name": "croqui_url", "type": "text" }
+      ]
+    },
+    {
+      "name": "modulos",
+      "label": "Módulos",
+      "primary_key": "id",
+      "fields": [
+        { "name": "id", "type": "uuid", "primary": true },
+        { "name": "ambiente_id", "type": "uuid", "relation": "ambientes" },
+        {
